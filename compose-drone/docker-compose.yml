@@ -1,0 +1,52 @@
+version: '2'
+volumes:
+  drone-data:
+    external: true
+    driver: rancher-nfs
+services:
+  server:
+    image: drone/drone:0.8.2
+    environment:
+      DRONE_ADMIN: zhangjie
+      DRONE_DEBUG: 'true'
+      DRONE_GITLAB: 'true'
+      DRONE_GITLAB_CLIENT: 91ae20d4137e79e26109847c10368c5285ffeff55294865cea435f6cbf6993c9
+      DRONE_GITLAB_SECRET: f38bff396cd0ec1163dd4836c8919e6d686f5f4d42592ef311aefd70f89025ba
+      DRONE_GITLAB_URL: http://xxxxx
+      DRONE_HOST: http://xxxxx
+      DRONE_OPEN: 'true'
+      DRONE_SECRET: l-7i=[:PY1Q{t}O7
+      GIN_MODE: release
+    volumes_from:
+    - server-volume
+    labels:
+      io.rancher.sidekicks: server-volume
+      io.rancher.container.hostname_override: container_name
+      io.rancher.scheduler.affinity:host_label_ne: server=server
+  agent:
+    image: drone/agent:0.8.2
+    environment:
+      DOCKER_API_VERSION: '1.24'
+      DRONE_SECRET: l-7i=[:PY1Q{t}O7
+      DRONE_SERVER: server:9000
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    command:
+    - agent
+    labels:
+      io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+      io.rancher.container.hostname_override: container_name
+      io.rancher.scheduler.affinity:host_label_soft_ne: server=server
+  server-volume:
+    image: rawmind/alpine-volume:0.0.2-1
+    environment:
+      SERVICE_GID: '0'
+      SERVICE_UID: '0'
+      SERVICE_VOLUME: /var/lib/drone
+    network_mode: none
+    volumes:
+    - drone-data:/var/lib/drone
+    labels:
+      io.rancher.container.start_once: 'true'
+      io.rancher.scheduler.affinity:container_label_soft_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+      io.rancher.container.hostname_override: container_name

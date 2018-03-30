@@ -1,0 +1,11 @@
+version: '2'
+services:
+  server:
+    scale: 1
+    start_on_create: true
+  agent:
+    scale: 7
+    start_on_create: true
+  server-volume:
+    scale: 1
+    start_on_create: true
